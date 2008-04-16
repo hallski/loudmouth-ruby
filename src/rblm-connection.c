@@ -272,6 +272,32 @@ conn_set_proxy (VALUE self, VALUE proxy_rval)
 	return Qnil;
 }
 
+static void
+disconnect_cb (LmConnection       *conn, 
+	       LmDisconnectReason  reason, 
+	       gpointer            user_data)
+{
+	rb_funcall((VALUE)user_data, rb_intern ("call"), 1, INT2FIX (reason));
+}
+
+VALUE
+conn_set_disconnect_handler (int argc, VALUE *argv, VALUE self)
+{
+	LmConnection *conn = rb_lm_connection_from_ruby_object (self);
+	VALUE         func;
+
+	rb_scan_args (argc, argv, "0&", &func);
+	if (NIL_P (func)) {
+		func = rb_block_proc ();
+	}
+
+	lm_connection_set_disconnect_function (conn, 
+					       disconnect_cb,
+					       (gpointer) func, NULL);
+}
+
+/* TODO: Make this function check if an LmMessage or text is passed and use the proper lm_connection_send/lm_connection_send_raw function. */
+/* TODO: Check if a block is past, if so use lm_connection_send_with_reply */
 VALUE
 conn_send (VALUE self, VALUE msg)
 {
@@ -351,8 +377,9 @@ Init_lm_connection (VALUE lm_mLM)
 	rb_define_method (lm_cConnection, "proxy", conn_get_proxy, 0);
 	rb_define_method (lm_cConnection, "proxy=", conn_set_proxy, 1);
 
+	rb_define_method (lm_cConnection, "set_disconnect_handler", conn_set_disconnect_handler, -1);
+
 	/* Use one send message and check if there is a block passed? */
-	
 	rb_define_method (lm_cConnection, "send", conn_send, 1);
 	/*
 	rb_define_method (lm_cConnection, "send_with_reply", conn_send_with_reply, -1);

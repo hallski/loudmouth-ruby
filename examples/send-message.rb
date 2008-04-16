@@ -29,6 +29,11 @@ conn.ssl.require_starttls = true
 
 recipient = ""
 
+conn.set_disconnect_handler do |reason|
+  puts "Disconnected"
+  main_loop.quit
+end
+
 conn.open do |result|
   puts "Connection open block"
   if result
