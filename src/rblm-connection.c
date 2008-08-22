@@ -4,6 +4,12 @@
 VALUE lm_cConnection;
 
 VALUE conn_set_server (VALUE self, VALUE server);
+VALUE _do_send_with_reply (VALUE self, LmConnection *conn, LmMessage *msg, VALUE block);
+static LmHandlerResult
+msg_handler_cb (LmMessageHandler *handler,
+		LmConnection     *connection,
+		LmMessage        *message,
+		gpointer          user_data);
 
 /* -- START of GMainContext hack -- 
  * This is a hack to get the GMainContext from a ruby VALUE, this will break if
@@ -299,12 +305,48 @@ conn_set_disconnect_handler (int argc, VALUE *argv, VALUE self)
 /* TODO: Make this function check if an LmMessage or text is passed and use the proper lm_connection_send/lm_connection_send_raw function. */
 /* TODO: Check if a block is past, if so use lm_connection_send_with_reply */
 VALUE
-conn_send (VALUE self, VALUE msg)
+conn_send (int argc, VALUE *argv, VALUE self)
 {
+	VALUE msg, block;
+
+	rb_scan_args(argc, argv, "1&", &msg, &block);
+
 	LmConnection *conn = rb_lm_connection_from_ruby_object (self);
 	LmMessage    *m = rb_lm_message_from_ruby_object (msg);
 
-	return GBOOL2RVAL (lm_connection_send (conn, m, NULL));
+	if (!NIL_P(block)) {
+		return _do_send_with_reply(self,conn,m,block);
+	} else {
+		return GBOOL2RVAL (lm_connection_send (conn, m, NULL));
+	}
+}
+
+VALUE
+conn_send_with_reply (int argc, VALUE *argv, VALUE self)
+{
+	VALUE msg, block;
+
+	rb_scan_args(argc, argv, "1&", &msg, &block);
+
+	LmConnection *conn = rb_lm_connection_from_ruby_object (self);
+	LmMessage    *m = rb_lm_message_from_ruby_object (msg);
+
+	if (NIL_P (block)) {
+		block = rb_block_proc ();
+	}
+
+	return _do_send_with_reply(self,conn,m,block);
+}
+
+VALUE
+_do_send_with_reply (VALUE self, LmConnection *conn, LmMessage *msg, VALUE block)
+{
+	LmMessageHandler *handler;
+	handler = lm_message_handler_new(msg_handler_cb, (gpointer) block, NULL);
+
+	lm_connection_send_with_reply(conn,msg,handler,NULL);
+
+	return Qtrue;
 }
 
 VALUE
@@ -380,9 +422,10 @@ Init_lm_connection (VALUE lm_mLM)
 	rb_define_method (lm_cConnection, "set_disconnect_handler", conn_set_disconnect_handler, -1);
 
 	/* Use one send message and check if there is a block passed? */
-	rb_define_method (lm_cConnection, "send", conn_send, 1);
-	/*
+	rb_define_method (lm_cConnection, "send", conn_send, -1);
+	
 	rb_define_method (lm_cConnection, "send_with_reply", conn_send_with_reply, -1);
+/*
 	rb_define_method (lm_cConnection, "send_raw", conn_send_raw, 1);
 	*/
 
