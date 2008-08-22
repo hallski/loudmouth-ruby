@@ -7,7 +7,7 @@ describe "Basic LM::Message" do
   it 'should send an iq and receive a reply' do
     main_loop = GLib::MainLoop.new
     conn = LM::Connection.new
-    conn.jid = 'vertebra-client@rd00.engineyard.com'
+    conn.jid = 'vertebra-client@localhost'
 
     conn.set_disconnect_handler do |reason|
       puts "Disconnected"
@@ -22,10 +22,12 @@ describe "Basic LM::Message" do
           unless auth_result
             puts "Failed to authenticate"
           end
-          m = LM::Message.new('vertebra-client@rd00.engineyard.com/agent', LM::MessageType::IQ)
-          conn.send(m) do |answer|
-          @answer_from_block = answer
         end
+        m = LM::Message.new('vertebra-client@localhost/agent', LM::MessageType::IQ)
+        m.node.value = "<op></op>"
+        conn.send(m) do |answer|
+          puts "ANSWER #{answer.inspect}"
+          @answer_from_block = answer
         end
         @answer_from_block.should_not be(nil)
         conn.close
