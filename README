@@ -10,27 +10,14 @@ These are the Ruby bindings for Loudmouth, an asynchronous XMPP library written 
   % ruby extconf.rb
   % make
   % sudo make install
-  
-=== extconf.rb options
-
-  : --ruby
-     ruby directory
-
-  : --topsrcdir
-     top source directory
-
-  : --topdir
-      top directory
-
-  : --strict
-      if some libraries fail to compile/install, "make"
-      command returns 1(exit 1)
 
 === Dependencies
 
-  : Ruby/GLib (part of Ruby-gtk2 or Ruby-gnome2, http://ruby-gnome2.sourceforge.jp)
+==== Ruby/GLib
+Part of Ruby-gtk2 or Ruby-gnome2, http://ruby-gnome2.sourceforge.jp/
   
-  : Loudmouth 1.4.0 (The C library, http://www.loudmouth-project.org)
+==== Loudmouth 1.4.0
+The C library, http://www.loudmouth-project.org/
 
 == Bugs
 
@@ -46,5 +33,4 @@ You can distribute/modify this program under the terms of
 the GNU LESSER GENERAL PUBLIC LICENSE Version 2.1.
 
 == Project Website
-
 http://www.loudmouth-project.org/
